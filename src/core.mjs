@@ -4,6 +4,11 @@ import {
   projectMetadata,
 } from "./customization-core.mjs";
 export const STATE_KEY = "yifang-workbench-state-v1";
+export function stateKeyFor(config) {
+  return config.storageNamespace
+    ? STATE_KEY + ":" + config.storageNamespace
+    : STATE_KEY;
+}
 export function projectURL(raw, base = "http://127.0.0.1:4590") {
   if (typeof raw !== "string" || raw.length > 2000 || !raw.trim())
     throw Error("项目地址无效");
@@ -27,6 +32,13 @@ export function projectURL(raw, base = "http://127.0.0.1:4590") {
   return url;
 }
 export function validateConfig(value) {
+  if (!value || typeof value !== "object") throw Error("项目配置无效");
+  if (
+    value.storageNamespace !== undefined &&
+    (typeof value.storageNamespace !== "string" ||
+      !/^([a-z][a-z0-9-]{0,40})?$/.test(value.storageNamespace))
+  )
+    throw Error("存储命名空间无效");
   if (
     !value ||
     value.version !== 1 ||
@@ -55,6 +67,14 @@ export function validateConfig(value) {
       throw Error("项目ID须唯一，名称和说明须有效");
     ids.add(p.id);
     projectURL(p.url);
+    if (p.originalUrl !== undefined) projectURL(p.originalUrl);
+    if (
+      p.permissions !== undefined &&
+      (!Array.isArray(p.permissions) ||
+        new Set(p.permissions).size !== p.permissions.length ||
+        p.permissions.some((x) => !["popups", "downloads"].includes(x)))
+    )
+      throw Error("项目权限只支持显式popups/downloads");
     return {
       id: p.id,
       name: p.name,
@@ -64,6 +84,8 @@ export function validateConfig(value) {
         ? p.icon
         : "grid",
       ...projectMetadata(p),
+      ...(p.originalUrl ? { originalUrl: p.originalUrl } : {}),
+      ...(p.permissions ? { permissions: [...p.permissions] } : {}),
     };
   });
   return {
@@ -72,6 +94,9 @@ export function validateConfig(value) {
     subtitle: value.subtitle,
     theme: value.theme,
     projects,
+    ...(value.storageNamespace
+      ? { storageNamespace: value.storageNamespace }
+      : {}),
   };
 }
 export function initialState() {

@@ -1,5 +1,6 @@
 import {
   STATE_KEY,
+  stateKeyFor,
   initialState,
   validateConfig,
   validateState,
@@ -12,6 +13,7 @@ const $ = (id) => document.getElementById(id),
   media = matchMedia("(prefers-color-scheme:dark)"),
   frames = new Map();
 let config,
+  storageKey = STATE_KEY,
   ids = [],
   state = initialState(),
   lastRaw = null,
@@ -48,7 +50,7 @@ function projectIcon(name) {
 }
 function readState() {
   try {
-    lastRaw = localStorage.getItem(STATE_KEY);
+    lastRaw = localStorage.getItem(storageKey);
     if (lastRaw !== null) {
       rawRecord = lastRaw;
       state = validateState(JSON.parse(lastRaw), ids);
@@ -63,14 +65,14 @@ function readState() {
 function persist() {
   if (protectedStorage) return false;
   try {
-    if (localStorage.getItem(STATE_KEY) !== lastRaw) {
+    if (localStorage.getItem(storageKey) !== lastRaw) {
       protectedStorage = true;
       $("noteStatus").textContent =
         "另一页面更新了记录，已暂停覆盖。先导出本次记录，再刷新。";
       return false;
     }
     const nextRaw = JSON.stringify(state);
-    localStorage.setItem(STATE_KEY, nextRaw);
+    localStorage.setItem(storageKey, nextRaw);
     lastRaw = nextRaw;
     return true;
   } catch {
@@ -79,9 +81,9 @@ function persist() {
   }
 }
 addEventListener("storage", (e) => {
-  if (e.key === STATE_KEY || e.key === null) {
+  if (e.key === storageKey || e.key === null) {
     try {
-      if (localStorage.getItem(STATE_KEY) !== lastRaw) {
+      if (localStorage.getItem(storageKey) !== lastRaw) {
         protectedStorage = true;
         $("noteStatus").textContent =
           "另一页面更新了记录，已暂停覆盖。先导出再刷新。";
@@ -235,7 +237,7 @@ function projectFrame(p) {
   const reload = el("button", "重载");
   reload.dataset.reload = p.id;
   const link = el("a", "原页");
-  link.href = url.href;
+  link.href = projectURL(p.originalUrl ?? p.url, location.origin).href;
   link.target = "_blank";
   link.rel = "noopener noreferrer";
   actions.append(focus, reload, link);
@@ -247,7 +249,9 @@ function projectFrame(p) {
   frame.referrerPolicy = "no-referrer";
   frame.sandbox =
     "allow-scripts allow-forms" +
-    (url.origin !== location.origin ? " allow-same-origin" : "");
+    (url.origin !== location.origin ? " allow-same-origin" : "") +
+    (p.permissions?.includes("popups") ? " allow-popups" : "") +
+    (p.permissions?.includes("downloads") ? " allow-downloads" : "");
   frame.src = url.href;
   frame.addEventListener("load", syncTheme);
   pane.append(header, hint, frame);
@@ -436,11 +440,40 @@ for (const [i, b] of [...document.querySelectorAll("[data-tab]")].entries())
     }
   });
 addEventListener("message", (e) => {
-  if (!e.data || e.data.type !== "yifang:ready" || e.data.version !== 1) return;
+  if (
+    !e.data ||
+    !["yifang:ready", "yifang:shortcut", "yifang:theme-request"].includes(
+      e.data.type,
+    ) ||
+    e.data.version !== 1
+  )
+    return;
   for (const [id, f] of frames) {
     const p = config.projects.find((p) => p.id === id);
-    if (expectedMessage(e, f.frame, projectURL(p.url, location.origin)))
-      syncTheme();
+    if (expectedMessage(e, f.frame, projectURL(p.url, location.origin))) {
+      if (e.data.type === "yifang:ready") syncTheme();
+      if (
+        e.data.type === "yifang:theme-request" &&
+        ["light", "dark", "system"].includes(e.data.theme)
+      ) {
+        state.theme = e.data.theme;
+        syncTheme();
+        persist();
+      }
+      if (e.data.type === "yifang:shortcut" && typeof e.data.key === "string") {
+        if (e.data.key === "Escape") {
+          if (focusId)
+            document.querySelector('[data-focus="' + focusId + '"]').click();
+          else if (document.body.classList.contains("focus-reading"))
+            $("focusButton").click();
+        }
+        if (
+          e.data.key.toLowerCase() === "k" &&
+          (e.data.ctrlKey === true || e.data.metaKey === true)
+        )
+          showSearch();
+      }
+    }
   }
 });
 $("searchButton").onclick = showSearch;
@@ -500,7 +533,9 @@ $("combineButton").onclick = () => {
 };
 $("combineForm").onsubmit = (e) => {
   e.preventDefault();
-  const selected = [...$("combineChoices input:checked")].map((x) => x.value);
+  const selected = [
+    ...document.querySelectorAll("#combineChoices input:checked"),
+  ].map((x) => x.value);
   if (!selected.length) {
     $("combineError").textContent = "请至少选择一个项目。";
     return;
@@ -536,7 +571,7 @@ $("backupFile").onchange = async (e) => {
   try {
     if (file.size > 500000) throw Error("文件过大");
     pendingImport = validateState(JSON.parse(await file.text()), ids);
-    importBase = localStorage.getItem(STATE_KEY);
+    importBase = localStorage.getItem(storageKey);
     $("backupPreview").textContent =
       "将替换：便笺 " +
       pendingImport.note.length +
@@ -556,10 +591,10 @@ $("backupFile").onchange = async (e) => {
 $("confirmImport").onclick = () => {
   if (!pendingImport) return;
   try {
-    if (localStorage.getItem(STATE_KEY) !== importBase)
+    if (localStorage.getItem(storageKey) !== importBase)
       throw Error("记录已在另一页面变化，请重新选择备份预览");
     const raw = JSON.stringify(pendingImport);
-    localStorage.setItem(STATE_KEY, raw);
+    localStorage.setItem(storageKey, raw);
     state = pendingImport;
     lastRaw = raw;
     protectedStorage = false;
@@ -595,6 +630,7 @@ try {
   let response = await fetch("/api/config");
   if (!response.ok) response = await fetch("/workbench.config.json");
   config = validateConfig(await response.json());
+  storageKey = stateKeyFor(config);
   ids = config.projects.map((p) => p.id);
   $("themeSheet").href = "/themes/" + config.theme + ".css";
   document.title = config.title;
