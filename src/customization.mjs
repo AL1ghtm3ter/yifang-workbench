@@ -351,6 +351,7 @@ export function mountCustomization(api) {
       selection,
       direction: $("layoutDirection").value,
       readingSize: api.state().readingSize,
+      splitRatio: api.state().splitRatio,
     });
     const ok = api.persist();
     $("layoutStatus").textContent = ok

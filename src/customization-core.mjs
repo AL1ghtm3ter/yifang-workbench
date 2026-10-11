@@ -104,7 +104,10 @@ export function validatePreferences(v, ids) {
         new Set(l.selection).size !== l.selection.length ||
         l.selection.some((id) => !ids.includes(id)) ||
         !["horizontal", "vertical"].includes(l.direction) ||
-        ![16, 18, 20, 22].includes(l.readingSize)
+        ![16, 18, 20, 22].includes(l.readingSize) ||
+        !Number.isInteger(l.splitRatio ?? 50) ||
+        (l.splitRatio ?? 50) < 25 ||
+        (l.splitRatio ?? 50) > 75
       )
         throw Error("布局模板无效");
       seen.add(l.id);
@@ -114,6 +117,7 @@ export function validatePreferences(v, ids) {
         selection: [...l.selection],
         direction: l.direction,
         readingSize: l.readingSize,
+        ...(l.splitRatio !== undefined ? { splitRatio: l.splitRatio } : {}),
       };
     });
   return {

@@ -14,6 +14,8 @@ Body: Microsoft YaHei UI / Microsoft YaHei / PingFang SC, default18px reading, 1
 
 ## Layout
 
+The visual desk uses three optional views: project map, task continuation and layout previews. Flat columns and paper divisions preserve the default world. Connection evidence opens inline with text states. Task lanes become a single reading flow on narrow screens. Two-pane separators support direct dragging and keyboard adjustment; narrow screens retain a single column without a drag handle.
+
 180px project rail, generous content gutter, asymmetrical two-column reading area with a narrow margin, flat project rows and side notes. Mobile becomes a linear reading flow; the decorative margin disappears. Avoid nested cards and decorative metric tiles.
 
 ## Motion

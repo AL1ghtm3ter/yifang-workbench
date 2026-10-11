@@ -598,10 +598,380 @@ textarea:focus {
   background: var(--surface);
 }
 #stage {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
   align-items: start;
+}
+
+/* Visual desk: paper divisions, contextual controls and real shell records. */
+.visual-desk {
+  margin: 44px 0;
+  padding: 0 0 32px;
+  border-bottom: 1px solid var(--line);
+}
+.visual-desk h2 {
+  font:
+    26px/1.5 SimSun,
+    STSong,
+    serif;
+  margin: 0;
+}
+.visual-intro {
+  color: var(--muted);
+  margin: 8px 0 22px;
+}
+.visual-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 26px;
+}
+.visual-switch button {
+  padding: 12px 0;
+  border-bottom: 2px solid transparent;
+}
+.visual-switch button.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.map-root {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-bottom: 28px;
+}
+.map-root strong {
+  font:
+    24px/1.5 SimSun,
+    STSong,
+    serif;
+}
+.map-root span,
+.map-project small {
+  color: var(--muted);
+  font-size: 14px;
+}
+.project-branches {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px 36px;
+  position: relative;
+}
+.map-project {
+  border-top: 1px solid var(--line);
+  padding: 20px 0 8px;
+  min-width: 0;
+}
+.map-project h3 {
+  margin: 0;
+  font-size: 19px;
+}
+.map-project p {
+  margin: 9px 0 14px;
+  line-height: 1.8;
+  color: var(--muted);
+  font-size: 16px;
+}
+.visual-actions {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 14px;
+}
+.visual-actions button,
+.visual-actions a,
+#newTask {
+  color: var(--accent);
+  text-underline-offset: 4px;
+}
+.visual-actions button:hover {
+  text-decoration: underline;
+}
+.visual-notice {
+  font-size: 14px;
+  color: var(--muted);
+}
+.visual-notice button {
+  margin-left: 14px;
+  color: var(--accent);
+}
+.connection-sheet {
+  margin-top: 24px;
+  background: var(--surface);
+  padding: 24px;
+  border: 1px solid var(--line);
+  animation: sheet-reveal 180ms ease-out;
+}
+.connection-sheet h3 {
+  margin: 0;
+  font-size: 21px;
+}
+.connection-flow {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 0;
+  gap: 24px;
+  margin: 24px 0;
+}
+.connection-flow li {
+  padding-top: 12px;
+  border-top: 1px solid var(--accent);
+}
+.connection-flow strong,
+.connection-flow span {
+  display: block;
+}
+.connection-flow span {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+.connection-facts {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 10px 18px;
+  font-size: 15px;
+}
+.connection-facts dt {
+  color: var(--muted);
+}
+.connection-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.connection-sheet > p {
+  font-size: 14px;
+  color: var(--muted);
+}
+.task-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+  margin-top: 22px;
+}
+.task-lane {
+  min-width: 0;
+  border-top: 1px solid var(--line);
+}
+.task-lane h3 {
+  font:
+    21px/1.5 SimSun,
+    STSong,
+    serif;
+  margin: 18px 0;
+}
+.task-empty {
+  color: var(--muted);
+  font-size: 14px;
+}
+.task-entry {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+.task-entry h4 {
+  margin: 0;
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+.task-entry p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+  line-height: 1.8;
+}
+.task-entry small {
+  color: var(--muted);
+  font-size: 13px;
+}
+.task-entry .visual-actions {
+  font-size: 14px;
+  gap: 12px;
+}
+.task-editor {
+  margin-top: 24px;
+  padding: 24px;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+}
+.task-editor > label {
+  display: block;
+  margin-bottom: 18px;
+  font-size: 15px;
+}
+.task-editor input:not([type="checkbox"]),
+.task-editor textarea,
+.task-editor select {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  background: var(--ground);
+  color: var(--text);
+  border: 1px solid var(--line);
+  font: inherit;
+}
+.task-editor fieldset {
+  padding: 16px;
+  margin: 0 0 18px;
+  border: 1px solid var(--line);
+}
+.task-editor .checkline {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0;
+}
+.layout-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+  margin-top: 22px;
+}
+.layout-choice {
+  text-align: left;
+  min-width: 0;
+  padding: 0 0 16px;
+  border-bottom: 1px solid var(--line);
+}
+.layout-choice strong,
+.layout-choice small {
+  display: block;
+  margin-top: 12px;
+}
+.layout-choice small {
+  color: var(--muted);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.layout-mini {
+  height: 110px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.layout-mini span {
+  border: 1px solid var(--line);
+  background: var(--ground);
+}
+.layout-mini span:only-child {
+  grid-column: 1/-1;
+}
+.layout-mini.vertical {
+  grid-template-columns: 1fr;
+}
+.layout-mini.horizontal:has(span:nth-child(2):last-child) {
+  grid-template-columns: var(--split, 50%) minmax(0, 1fr);
+}
+.layout-choice:hover .layout-mini {
+  border-color: var(--accent);
+}
+#stage.adjustable {
+  grid-template-columns: minmax(0, calc(var(--split, 50%) - 9px)) minmax(0, 1fr);
+}
+.split-handle {
+  position: absolute;
+  z-index: 2;
+  left: calc(var(--split, 50%) - 8px);
+  top: 0;
+  bottom: 0;
+  width: 16px;
+  cursor: col-resize;
+  touch-action: none;
+}
+.split-handle::after {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 32px;
+  bottom: 32px;
+  width: 1px;
+  background: var(--line);
+}
+.split-handle:hover::after,
+.split-handle:focus-visible::after {
+  background: var(--accent);
+}
+.split-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 14px;
+}
+.split-controls output {
+  font-variant-numeric: tabular-nums;
+  min-width: 55px;
+}
+.resizing iframe {
+  pointer-events: none;
+}
+.pane-focused #stage.adjustable {
+  grid-template-columns: 1fr;
+}
+.pane-focused .split-handle {
+  display: none;
+}
+@keyframes sheet-reveal {
+  from {
+    opacity: 0.5;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 800px) {
+  .project-branches,
+  .task-board,
+  .layout-gallery,
+  .connection-flow {
+    grid-template-columns: 1fr;
+  }
+  .visual-desk {
+    margin-top: 30px;
+  }
+  .connection-sheet,
+  .task-editor {
+    padding: 18px;
+  }
+  .connection-facts {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .connection-facts dd {
+    margin-bottom: 12px;
+  }
+  #stage.adjustable {
+    grid-template-columns: 1fr;
+  }
+  .split-handle,
+  .split-controls {
+    display: none;
+  }
+  .layout-mini {
+    height: 120px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .connection-sheet {
+    animation: none;
+  }
+}
+:root[data-theme="dark"] .visual-switch button.active,
+:root[data-theme="dark"] .visual-actions button,
+:root[data-theme="dark"] .visual-actions a,
+:root[data-theme="dark"] .visual-notice button,
+:root[data-theme="dark"] #newTask {
+  color: var(--text);
 }
 #stage[data-count="1"],
 #stage.vertical {
@@ -617,6 +987,7 @@ textarea:focus {
 .pane-header {
   padding: 12px 15px;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
@@ -624,6 +995,7 @@ textarea:focus {
 }
 .pane-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
   font-size: 13px;

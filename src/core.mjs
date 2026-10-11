@@ -108,6 +108,8 @@ export function initialState() {
     direction: "horizontal",
     theme: "light",
     readingSize: 18,
+    splitRatio: 50,
+    tasks: [],
     preferences: initialPreferences(),
   };
 }
@@ -129,6 +131,30 @@ export function validateState(v, ids) {
     ![16, 18, 20, 22].includes(v.readingSize)
   )
     throw Error("不是有效的工作台备份");
+  const ratio = v.splitRatio ?? 50;
+  if (!Number.isInteger(ratio) || ratio < 25 || ratio > 75)
+    throw Error("并排比例无效");
+  const taskIds = new Set();
+  const tasks = v.tasks ?? [];
+  if (!Array.isArray(tasks) || tasks.length > 12) throw Error("任务记录无效");
+  for (const t of tasks) {
+    if (
+      !t ||
+      typeof t.id !== "string" ||
+      !/^[a-z0-9-]{1,60}$/.test(t.id) ||
+      taskIds.has(t.id) ||
+      typeof t.title !== "string" ||
+      !t.title.trim() ||
+      t.title.length > 80 ||
+      typeof t.next !== "string" ||
+      t.next.length > 600 ||
+      !subset(t.projects) ||
+      !t.projects.length ||
+      !["active", "paused", "done"].includes(t.status)
+    )
+      throw Error("任务记录无效");
+    taskIds.add(t.id);
+  }
   return {
     version: 1,
     note: v.note,
@@ -137,6 +163,14 @@ export function validateState(v, ids) {
     direction: v.direction,
     theme: v.theme,
     readingSize: v.readingSize,
+    splitRatio: ratio,
+    tasks: tasks.map((t) => ({
+      id: t.id,
+      title: t.title,
+      next: t.next,
+      projects: [...t.projects],
+      status: t.status,
+    })),
     preferences: validatePreferences(v.preferences, ids),
   };
 }

@@ -24,6 +24,8 @@ Configuration registry, iframe workspaces, themes, search, recent projects, priv
 
 The v0.2 development candidate adds download-only project onboarding, personal groups/tags/pins, named layouts, cancellable appearance previews and privacy-default agent handoff files. Configuration still requires a human-managed local file and restart.
 
+The visual desk adds a registered-project map, session connection evidence, user-authored task continuation, layout thumbnails and adjustable two-pane proportions. Tasks are shell-only personal records; they never mark project business facts complete. Iframe load and protocol readiness are distinct, and neither proves business health.
+
 ## Brand Commitments
 
 Yifang Workbench. Default is a readable personal desk inspired by Song aesthetics: rice-paper ground, ink text, restrained vermilion; body uses a clear sans-serif and headings use serif.

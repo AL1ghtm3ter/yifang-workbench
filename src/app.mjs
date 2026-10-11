@@ -9,10 +9,12 @@ import {
 } from "./core.mjs";
 import { mountCustomization } from "./customization.mjs";
 import { visibleProjects } from "./customization-core.mjs";
+import { mountVisualDesk } from "./visual-desk.mjs";
 const $ = (id) => document.getElementById(id),
   media = matchMedia("(prefers-color-scheme:dark)"),
   frames = new Map();
 let config,
+  visualDesk,
   storageKey = STATE_KEY,
   ids = [],
   state = initialState(),
@@ -307,6 +309,7 @@ function render() {
   if (home) navHome.setAttribute("aria-current", "page");
   else navHome.removeAttribute("aria-current");
   home ? refreshHome() : workspace();
+  visualDesk?.refresh();
 }
 function openProjects(selected, push = true) {
   if (!selected.length) return;
@@ -451,7 +454,10 @@ addEventListener("message", (e) => {
   for (const [id, f] of frames) {
     const p = config.projects.find((p) => p.id === id);
     if (expectedMessage(e, f.frame, projectURL(p.url, location.origin))) {
-      if (e.data.type === "yifang:ready") syncTheme();
+      if (e.data.type === "yifang:ready") {
+        visualDesk?.ready(id);
+        syncTheme();
+      }
       if (
         e.data.type === "yifang:theme-request" &&
         ["light", "dark", "system"].includes(e.data.theme)
@@ -581,8 +587,14 @@ $("backupFile").onchange = async (e) => {
       pendingImport.selection.length +
       " 个项目；命名模板 " +
       pendingImport.preferences.layouts.length +
-      " 个。\n" +
-      "主题与项目分类也会按备份替换。旧版备份缺少定制字段时，会恢复默认定制设置。\n导入不会写入任何子项目。";
+      " 个；任务 " +
+      pendingImport.tasks.length +
+      " 件；左右比例 " +
+      pendingImport.splitRatio +
+      " : " +
+      (100 - pendingImport.splitRatio) +
+      "。\n" +
+      "主题、项目分类和任务也会按备份替换。旧版备份没有任务时会清空任务面板，并恢复默认比例。\n导入不会写入任何子项目。";
     $("confirmImport").disabled = false;
   } catch (err) {
     $("backupPreview").textContent = "未导入：" + err.message;
@@ -699,11 +711,20 @@ try {
     onRestore: (run) => restoreHooks.push(run),
     openLayout(layout) {
       state.direction = layout.direction;
+      state.splitRatio = layout.splitRatio ?? 50;
       state.readingSize = layout.readingSize;
       typeSize();
       openProjects(layout.selection);
     },
   });
+  visualDesk = mountVisualDesk({
+    config: () => config,
+    state: () => state,
+    persist,
+    openProjects,
+    frames,
+  });
+  restoreHooks.push(() => visualDesk.refresh());
   route();
 } catch (err) {
   $("fatal").hidden = false;
