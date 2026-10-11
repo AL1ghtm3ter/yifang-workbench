@@ -1,0 +1,32 @@
+:root {
+  --ground: #f3f5f7;
+  --surface: #fff;
+  --rail: #e5ebf0;
+  --text: #243442;
+  --muted: #506579;
+  --line: #d4dee8;
+  --rule: #a3b4c3;
+  --accent: #355e83;
+  --accent-hover: #254760;
+  --on-accent: #fff;
+  --soft: #e6edf4;
+  --margin: #edf1f5;
+  --ui-font: "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+  --title-font: var(--ui-font);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --ground: #17212c;
+  --surface: #202f3e;
+  --rail: #141e29;
+  --text: #e9f1f8;
+  --muted: #bdcedd;
+  --line: #3b5065;
+  --rule: #66819b;
+  --accent: #426f98;
+  --accent-hover: #31577a;
+  --soft: #2b4155;
+  --margin: #243747;
+  color-scheme: dark;
+}

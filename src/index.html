@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>一方工作台</title>
+    <link rel="stylesheet" href="/styles/layout.css" />
+    <link id="themeSheet" rel="stylesheet" href="/themes/song-paper.css" />
+  </head>
+  <body>
+    <aside class="rail">
+      <a class="brand" href="#home"
+        ><span class="seal" aria-hidden="true">记</span
+        ><span id="brandTitle">一方书桌</span></a
+      >
+      <nav id="navigation" aria-label="项目导航"></nav>
+      <div class="rail-bottom">
+        <time id="today"></time><button id="themeButton">切换深色</button
+        ><button id="agentGuide">给 Agent 的说明</button
+        ><button id="backupButton">备份与恢复</button>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <span id="breadcrumb">我的桌面</span
+        ><button id="searchButton">搜索项目 <kbd>Ctrl K</kbd></button>
+      </header>
+      <div class="heading">
+        <div>
+          <h1 id="viewTitle">一方书桌</h1>
+          <p id="subtitle"></p>
+        </div>
+        <button class="primary" id="combineButton">并排工作</button>
+      </div>
+      <section id="homeView">
+        <section class="reading-desk">
+          <div class="reading-copy">
+            <div class="reading-toolbar">
+              <span>案头</span>
+              <div class="reading-tools">
+                <button id="typeMinus" aria-label="减小阅读字号">A−</button
+                ><output id="typeSize">18</output
+                ><button id="typePlus" aria-label="增大阅读字号">A＋</button
+                ><button id="focusButton">专注这一页</button>
+              </div>
+            </div>
+            <h2>资料在案头，<br />思路在手边。</h2>
+            <p class="reading-intro">
+              从上次的位置继续，或留下一点自己的想法。
+            </p>
+            <div class="reading-tabs" role="tablist" aria-label="案头内容">
+              <button
+                role="tab"
+                id="overviewTab"
+                data-tab="overview"
+                aria-selected="true"
+                aria-controls="readingBody"
+              >
+                案头</button
+              ><button
+                role="tab"
+                id="noteTab"
+                data-tab="note"
+                aria-selected="false"
+                aria-controls="readingBody"
+                tabindex="-1"
+              >
+                留一笔</button
+              ><button
+                role="tab"
+                id="aboutTab"
+                data-tab="about"
+                aria-selected="false"
+                aria-controls="readingBody"
+                tabindex="-1"
+              >
+                接入</button
+              ><span class="tab-track" aria-hidden="true"></span>
+            </div>
+            <div
+              class="reading-body"
+              id="readingBody"
+              role="tabpanel"
+              tabindex="0"
+              aria-labelledby="overviewTab"
+            ></div>
+            <div class="reading-footer">
+              <button class="primary" id="continueButton">打开一个项目</button
+              ><span id="continueLabel"></span>
+            </div>
+          </div>
+          <div class="reading-margin">
+            <span>读而有得</span><small>阅读<br />思考<br />留痕</small>
+          </div>
+        </section>
+        <div class="columns">
+          <section>
+            <div class="section-head">
+              <h2>手边的事</h2>
+              <span id="projectCount"></span>
+            </div>
+            <div id="projectList"></div>
+            <section class="recent-section">
+              <h2>最近翻过的</h2>
+              <div id="recentList"></div>
+            </section>
+          </section>
+          <aside class="side">
+            <h2>留一笔</h2>
+            <textarea
+              id="deskNote"
+              aria-label="个人便笺"
+              maxlength="10000"
+              placeholder="想到什么，先留在这里。"
+            ></textarea>
+            <p id="noteStatus" role="status">仅保存在当前浏览器。</p>
+            <h2>一处对照</h2>
+            <div id="quickCombinations"></div>
+            <p>项目各自运行，工作台负责入口、布局和阅读节奏。</p>
+          </aside>
+        </div>
+      </section>
+      <section id="workspaceView" hidden>
+        <div class="workspace-tools">
+          <button id="homeButton">回到桌面</button
+          ><button id="directionButton">切换上下排列</button
+          ><label
+            >项目
+            <select id="addProject" aria-label="添加并排项目"></select></label
+          ><button id="appendProject">加入工作区</button>
+        </div>
+        <div id="stage"></div>
+      </section>
+      <footer>
+        <span id="footerMessage">本地工作台 · 项目独立接入</span
+        ><a
+          href="https://github.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          id="repoLink"
+          hidden
+          >项目源码</a
+        >
+      </footer>
+      <div id="fatal" role="alert" hidden></div>
+    </main>
+    <dialog id="searchDialog" aria-labelledby="searchTitle">
+      <header>
+        <h2 id="searchTitle">找到一个项目</h2>
+        <button data-close="searchDialog">关闭</button>
+      </header>
+      <input
+        id="searchQuery"
+        type="search"
+        aria-label="搜索项目"
+        placeholder="项目名称或说明…"
+      />
+      <div id="searchResults"></div>
+    </dialog>
+    <dialog id="combineDialog" aria-labelledby="combineTitle">
+      <header>
+        <h2 id="combineTitle">选择并排项目</h2>
+        <button data-close="combineDialog">关闭</button>
+      </header>
+      <form id="combineForm">
+        <div id="combineChoices"></div>
+        <p id="combineError" role="status"></p>
+        <button class="primary">打开工作区</button>
+      </form>
+    </dialog>
+    <dialog id="guideDialog" aria-labelledby="guideTitle">
+      <header>
+        <h2 id="guideTitle">和你的 Agent 一起定制</h2>
+        <button data-close="guideDialog">关闭</button>
+      </header>
+      <p>
+        把下面的说明交给你在此仓库工作的 Agent。这里不会发送消息或调用模型。
+      </p>
+      <pre id="agentPrompt"></pre>
+      <button id="copyGuide">复制说明</button>
+      <p id="copyStatus" role="status"></p>
+    </dialog>
+    <dialog id="backupDialog" aria-labelledby="backupTitle">
+      <header>
+        <h2 id="backupTitle">个人记录备份</h2>
+        <button data-close="backupDialog">关闭</button>
+      </header>
+      <p>
+        导出包含便笺、最近项目和布局偏好，不包含项目内容。导入先预览，再由你确认。
+      </p>
+      <button id="exportBackup">导出记录</button
+      ><input
+        id="backupFile"
+        type="file"
+        accept=".json,application/json"
+        aria-label="选择工作台备份"
+      />
+      <div id="backupPreview" role="status"></div>
+      <button id="confirmImport" disabled>确认替换当前记录</button
+      ><button id="exportRaw" hidden>导出异常原始记录</button>
+    </dialog>
+    <script type="module" src="/app.mjs"></script>
+  </body>
+</html>

@@ -1,0 +1,53 @@
+:root {
+  color-scheme: light;
+  --bg: #fbf7ed;
+  --text: #25221d;
+  --line: #d8ceba;
+  --size: 18px;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #302b25;
+  --text: #f0e8d9;
+  --line: #514638;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font:
+    var(--size) / 1.9 "Microsoft YaHei",
+    sans-serif;
+}
+main {
+  max-width: 65ch;
+  margin: 0 auto;
+  padding: 28px;
+}
+h1 {
+  font-size: 26px;
+}
+h2 {
+  font-size: 21px;
+}
+input {
+  display: block;
+  padding: 12px;
+  font: inherit;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+}
+input:focus-visible {
+  outline: 2px solid #a43226;
+  outline-offset: 4px;
+}
+#bridgeStatus {
+  font-size: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}

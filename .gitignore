@@ -1,0 +1,13 @@
+config.local.json
+.runtime/
+dist/
+release/
+node_modules/
+.env
+.env.*
+*.log
+*.db
+*.sqlite*
+.impeccable/
+playwright-report/
+test-results/

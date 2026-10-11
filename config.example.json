@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "title": "一方书桌",
+  "subtitle": "书在案头，事在手边。",
+  "theme": "song-paper",
+  "projects": [
+    {
+      "id": "reading-room",
+      "name": "阅读室",
+      "description": "用一个示例页面了解项目接入。",
+      "url": "/examples/reading.html",
+      "icon": "book"
+    },
+    {
+      "id": "playground",
+      "name": "练习项目",
+      "description": "测试主题同步与独立项目交互。",
+      "url": "/examples/playground.html",
+      "icon": "grid"
+    }
+  ]
+}

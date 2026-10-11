@@ -1,0 +1,17 @@
+{
+  "name": "yifang-workbench",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A personal local workbench with agent-friendly themes and independent project adapters.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node scripts/server.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check:public": "node scripts/check-public.mjs",
+    "package": "node scripts/package.mjs"
+  }
+}
