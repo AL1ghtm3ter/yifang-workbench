@@ -6,6 +6,8 @@ import {
   projectURL,
   expectedMessage,
 } from "./core.mjs";
+import { mountCustomization } from "./customization.mjs";
+import { visibleProjects } from "./customization-core.mjs";
 const $ = (id) => document.getElementById(id),
   media = matchMedia("(prefers-color-scheme:dark)"),
   frames = new Map();
@@ -28,6 +30,7 @@ const el = (tag, text) => {
   if (text !== undefined) n.textContent = text;
   return n;
 };
+const restoreHooks = [];
 function projectIcon(name) {
   const shapes = {
     book: '<path d="M12 5v16M12 5C8 2 4 3 2 4v15c3-1 7-1 10 2 3-3 7-3 10-2V4c-2-1-6-2-10 1z"/>',
@@ -354,9 +357,7 @@ function download(value, name) {
 function search() {
   const q = $("searchQuery").value.trim().toLowerCase();
   $("searchResults").replaceChildren();
-  const matches = config.projects.filter((p) =>
-    (p.name + p.description).toLowerCase().includes(q),
-  );
+  const matches = visibleProjects(config.projects, state.preferences, q);
   for (const p of matches) {
     const b = el("button", p.name + " — " + p.description);
     b.dataset.open = p.id;
@@ -543,7 +544,10 @@ $("backupFile").onchange = async (e) => {
       pendingImport.recent.length +
       " 个；布局 " +
       pendingImport.selection.length +
-      " 个项目。\n导入不会写入任何子项目。";
+      " 个项目；命名模板 " +
+      pendingImport.preferences.layouts.length +
+      " 个。\n" +
+      "主题与项目分类也会按备份替换。旧版备份缺少定制字段时，会恢复默认定制设置。\n导入不会写入任何子项目。";
     $("confirmImport").disabled = false;
   } catch (err) {
     $("backupPreview").textContent = "未导入：" + err.message;
@@ -580,6 +584,7 @@ $("confirmImport").onclick = () => {
       view === "home" ? "#home" : "#project/" + state.selection.join("+"),
     );
     $("backupPreview").textContent = "个人记录已恢复，子项目内容保持不变。";
+    restoreHooks.forEach((run) => run());
   } catch (err) {
     $("backupPreview").textContent = "未恢复：" + err.message;
   }
@@ -647,6 +652,22 @@ try {
     day: "numeric",
     weekday: "long",
   }).format(new Date());
+  mountCustomization({
+    config: () => config,
+    state: () => state,
+    persist,
+    validateConfig,
+    projectURL,
+    download,
+    syncReading: typeSize,
+    onRestore: (run) => restoreHooks.push(run),
+    openLayout(layout) {
+      state.direction = layout.direction;
+      state.readingSize = layout.readingSize;
+      typeSize();
+      openProjects(layout.selection);
+    },
+  });
   route();
 } catch (err) {
   $("fatal").hidden = false;

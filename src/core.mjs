@@ -1,3 +1,8 @@
+import {
+  initialPreferences,
+  validatePreferences,
+  projectMetadata,
+} from "./customization-core.mjs";
 export const STATE_KEY = "yifang-workbench-state-v1";
 export function projectURL(raw, base = "http://127.0.0.1:4590") {
   if (typeof raw !== "string" || raw.length > 2000 || !raw.trim())
@@ -58,6 +63,7 @@ export function validateConfig(value) {
       icon: ["book", "grid", "file", "chat", "chart"].includes(p.icon)
         ? p.icon
         : "grid",
+      ...projectMetadata(p),
     };
   });
   return {
@@ -77,6 +83,7 @@ export function initialState() {
     direction: "horizontal",
     theme: "light",
     readingSize: 18,
+    preferences: initialPreferences(),
   };
 }
 export function validateState(v, ids) {
@@ -105,6 +112,7 @@ export function validateState(v, ids) {
     direction: v.direction,
     theme: v.theme,
     readingSize: v.readingSize,
+    preferences: validatePreferences(v.preferences, ids),
   };
 }
 export function expectedMessage(event, frame, url) {

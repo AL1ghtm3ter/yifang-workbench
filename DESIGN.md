@@ -2,6 +2,8 @@
 
 The default world is a personal paper desk interpreted as working UI. Do not turn it into a commercial dashboard or a historical artifact simulation.
 
+Customization controls stay near the project list and use optional dialogs. The default desk remains readable; comfortable/compact density is a personal preference. Theme preview is temporary until confirmation, and cancellation restores the persisted appearance.
+
 ## Tokens
 
 song-paper.css defines ground #f4efdf, surface #fbf7ed, text #25221d, muted #574f43, accent #a43226 and matching dark values. Layout references semantic tokens rather than hardcoded theme colors.

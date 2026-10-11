@@ -24,7 +24,7 @@ try {
   }
   let archive;
   if (process.platform === "win32") {
-    archive = path.join(release, "yifang-workbench-0.1.0-source.zip");
+    archive = path.join(release, "yifang-workbench-0.2.0-source.zip");
     const quote = (s) => "'" + s.replaceAll("'", "''") + "'";
     cp.execFileSync(
       "powershell.exe",
@@ -36,7 +36,7 @@ try {
       { windowsHide: true, stdio: "inherit" },
     );
   } else {
-    archive = path.join(release, "yifang-workbench-0.1.0-source.tar.gz");
+    archive = path.join(release, "yifang-workbench-0.2.0-source.tar.gz");
     cp.execFileSync("tar", ["-czf", archive, "-C", temp, "yifang-workbench"]);
   }
   const manifest = {
