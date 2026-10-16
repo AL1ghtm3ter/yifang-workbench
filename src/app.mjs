@@ -6,15 +6,24 @@ import {
   validateState,
   projectURL,
   expectedMessage,
+  recordIds,
+  migrateRecord,
+  openingMode,
 } from "./core.mjs";
 import { mountCustomization } from "./customization.mjs";
 import { visibleProjects } from "./customization-core.mjs";
+import { mountSettings } from "./settings.mjs";
 import { mountVisualDesk } from "./visual-desk.mjs";
+import { mountPersonalDesk } from "./personal-desk.mjs";
 const $ = (id) => document.getElementById(id),
   media = matchMedia("(prefers-color-scheme:dark)"),
   frames = new Map();
 let config,
+  settingsPreview = null,
   visualDesk,
+  personalDesk,
+  migrationPending = null,
+  undoStack = [],
   storageKey = STATE_KEY,
   ids = [],
   state = initialState(),
@@ -56,13 +65,60 @@ function readState() {
     if (lastRaw !== null) {
       rawRecord = lastRaw;
       state = validateState(JSON.parse(lastRaw), ids);
+      const previous = state.registry;
+      if (
+        previous.length &&
+        (previous.length !== config.projects.length ||
+          previous.some((p) => {
+            const now = config.projects.find((x) => x.id === p.id);
+            return !now || now.name !== p.name || now.url !== p.url;
+          }))
+      ) {
+        migrationPending = JSON.parse(lastRaw);
+        protectedStorage = true;
+        $("noteStatus").textContent =
+          "项目配置有变化，请先在「桌面与记录」核对，原记录尚未覆盖。";
+      }
     }
   } catch {
     protectedStorage = true;
     $("noteStatus").textContent =
       "原记录无法读取或解析，已暂停覆盖。请先在备份窗口导出原始记录。";
+    try {
+      const parsed = JSON.parse(rawRecord);
+      validateState(parsed, [...new Set([...ids, ...recordIds(parsed)])]);
+      migrationPending = parsed;
+      $("noteStatus").textContent =
+        "项目配置与旧记录不一致，请在「桌面与记录」明确映射或归档。";
+    } catch {}
   }
   $("exportRaw").hidden = rawRecord === null || !protectedStorage;
+  if (!protectedStorage)
+    state.registry = config.projects.map(({ id, name, url }) => ({
+      id,
+      name,
+      url,
+    }));
+}
+function checkpoint(label) {
+  undoStack.push({ label, state: structuredClone(state), after: null });
+  if (undoStack.length > 10) undoStack.shift();
+}
+function undoChange() {
+  const entry = undoStack.at(-1);
+  if (!entry?.after || entry.after !== JSON.stringify(state)) return false;
+  const current = state;
+  state = validateState(entry.state, ids);
+  if (!persist()) {
+    state = current;
+    return false;
+  }
+  undoStack.pop();
+  $("deskNote").value = state.note;
+  typeSize();
+  render();
+  restoreHooks.forEach((run) => run());
+  return true;
 }
 function persist() {
   if (protectedStorage) return false;
@@ -76,6 +132,9 @@ function persist() {
     const nextRaw = JSON.stringify(state);
     localStorage.setItem(storageKey, nextRaw);
     lastRaw = nextRaw;
+    const checkpoint = undoStack.at(-1);
+    if (checkpoint && checkpoint.after === null) checkpoint.after = nextRaw;
+    personalDesk?.refresh();
     return true;
   } catch {
     $("noteStatus").textContent = "浏览器不允许保存，请导出本次记录。";
@@ -97,29 +156,23 @@ addEventListener("storage", (e) => {
 });
 function motion(update) {
   const current = ++version;
-  transition?.skipTransition();
-  const commit = () => {
-    if (current === version) update();
-  };
-  if (
-    document.startViewTransition &&
-    !matchMedia("(prefers-reduced-motion:reduce)").matches
-  ) {
-    transition = document.startViewTransition(commit);
-    for (const promise of [
-      transition.ready,
-      transition.updateCallbackDone,
-      transition.finished,
-    ])
-      promise.catch(() => {});
-  } else commit();
+  transition?.cancel();
+  update();
+  if (current === 1 || matchMedia("(prefers-reduced-motion:reduce)").matches) return;
+  const target = view === "home" ? $("homeView") : $("workspaceView");
+  // Animate only content: the project rail and settings remain immediately clickable.
+  transition = target.animate([
+    { opacity: .45, transform: "translateX(36px)", clipPath: "inset(0 0 0 8%)" },
+    { opacity: 1, transform: "translateX(0)", clipPath: "inset(0)" },
+  ], { duration: 420, easing: "cubic-bezier(.16,1,.3,1)" });
 }
 function effectiveTheme() {
-  return state.theme === "system"
+  const theme = settingsPreview?.theme ?? state.theme;
+  return theme === "system"
     ? media.matches
       ? "dark"
       : "light"
-    : state.theme;
+    : theme;
 }
 function syncTheme() {
   document.documentElement.dataset.theme = effectiveTheme();
@@ -135,21 +188,22 @@ function syncTheme() {
         type: "yifang:theme",
         version: 1,
         theme: effectiveTheme(),
-        readingSize: state.readingSize,
+        readingSize: settingsPreview?.readingSize ?? state.readingSize,
       },
       f.frame.sandbox.contains("allow-same-origin") ? url.origin : "*",
     );
   }
 }
 media.addEventListener("change", () => {
-  if (state.theme === "system") syncTheme();
+  if ((settingsPreview?.theme ?? state.theme) === "system") syncTheme();
 });
 function typeSize() {
+  const size = settingsPreview?.readingSize ?? state.readingSize;
   document.documentElement.style.setProperty(
     "--reading-size",
-    state.readingSize + "px",
+    size + "px",
   );
-  $("typeSize").textContent = state.readingSize;
+  $("typeSize").textContent = size;
   $("typeMinus").disabled = state.readingSize === 16;
   $("typePlus").disabled = state.readingSize === 22;
   syncTheme();
@@ -181,7 +235,8 @@ function reading() {
       ),
     );
   } else {
-    const p = config.projects.find((p) => p.id === state.recent[0]);
+    const projects = availableProjects();
+    const p = state.recent.map(id => projects.find(project => project.id === id)).find(Boolean);
     box.append(
       el(
         "p",
@@ -203,15 +258,16 @@ function reading() {
   track();
 }
 function refreshHome() {
+  const projects = availableProjects(), recent = state.recent.filter(id => projects.some(p => p.id === id));
   const p =
-    config.projects.find((p) => p.id === state.recent[0]) || config.projects[0];
+    projects.find((p) => p.id === recent[0]) || projects[0];
   $("continueButton").disabled = !p;
   $("continueButton").textContent = p ? "继续：" + p.name : "先接入一个项目";
   $("continueLabel").textContent = state.recent.length
     ? "来自本机最近记录"
     : "尚未记录最近位置";
   $("recentList").replaceChildren();
-  for (const id of state.recent) {
+  for (const id of recent) {
     const p = config.projects.find((p) => p.id === id),
       row = el("div");
     row.className = "recent-row";
@@ -220,9 +276,21 @@ function refreshHome() {
     row.append(b, el("span", "打开项目"));
     $("recentList").append(row);
   }
-  if (!state.recent.length)
+  if (!recent.length)
     $("recentList").append(el("p", "进入项目后，这里会保留最近的位置。"));
   reading();
+}
+function availableProjects() { return visibleProjects(config.projects, state.preferences); }
+function refreshVisibility() {
+  const projects = availableProjects(), shown = new Set(projects.map(p => p.id));
+  for (const button of $("navigation").querySelectorAll("[data-open]")) button.hidden = !shown.has(button.dataset.open);
+  $("projectCount").textContent = projects.length + " 个显示 · " + (ids.length - projects.length) + " 个隐藏";
+  $("combineButton").disabled = !projects.length;
+  $("quickCombinations").replaceChildren();
+  for (let i = 0; i + 1 < projects.length; i += 2) {
+    const pair = projects.slice(i, i + 2), button = el("button", pair.map(p => p.name).join("＋"));
+    button.onclick = () => openProjects(pair.map(p => p.id)); $("quickCombinations").append(button);
+  }
 }
 function projectFrame(p) {
   if (frames.has(p.id)) return frames.get(p.id);
@@ -277,7 +345,7 @@ function workspace() {
   $("directionButton").textContent =
     state.direction === "horizontal" ? "切换上下排列" : "切换左右排列";
   $("addProject").replaceChildren();
-  for (const p of config.projects.filter(
+  for (const p of availableProjects().filter(
     (p) => !state.selection.includes(p.id),
   )) {
     const o = el("option", p.name);
@@ -287,6 +355,7 @@ function workspace() {
   $("appendProject").disabled = !$("addProject").options.length;
 }
 function render() {
+  refreshVisibility();
   const home = view === "home";
   $("homeView").hidden = !home;
   $("workspaceView").hidden = home;
@@ -310,9 +379,31 @@ function render() {
   else navHome.removeAttribute("aria-current");
   home ? refreshHome() : workspace();
   visualDesk?.refresh();
+  personalDesk?.refresh();
 }
-function openProjects(selected, push = true) {
-  if (!selected.length) return;
+function openProjects(selected, push = true, honorMode = true) {
+  selected = selected.filter(id => availableProjects().some(p => p.id === id));
+  if (!selected.length) return home(push);
+  if (selected.length === 1 && push && honorMode) {
+    const mode = openingMode(state,selected[0]),
+      p = config.projects.find((p) => p.id === selected[0]);
+    if (mode !== "embed") {
+      const url = projectURL(p.originalUrl ?? p.url, location.origin).href;
+      if (mode === "tab") {
+        const a = el("a");
+        a.href = url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.click();
+      } else
+        navigator.clipboard.writeText(url).then(
+          () => personalDesk?.notify("项目原页链接已复制。"),
+          () =>
+            personalDesk?.notify("无法复制，请在连接说明中手动复制原页链接。"),
+        );
+      return;
+    }
+  }
   focusId = null;
   document.body.classList.remove("pane-focused", "focus-reading");
   state.selection = [...selected];
@@ -485,7 +576,10 @@ addEventListener("message", (e) => {
 $("searchButton").onclick = showSearch;
 $("searchQuery").oninput = search;
 $("homeButton").onclick = () => home();
-$("continueButton").onclick = () => openProjects([state.recent[0] || ids[0]]);
+$("continueButton").onclick = () => {
+  const projects = availableProjects(), recent = state.recent.find(id => projects.some(p => p.id === id));
+  if (recent || projects.length) openProjects([recent || projects[0].id]);
+};
 $("directionButton").onclick = () => {
   state.direction =
     state.direction === "horizontal" ? "vertical" : "horizontal";
@@ -525,7 +619,7 @@ $("deskNote").oninput = () => {
 };
 $("combineButton").onclick = () => {
   $("combineChoices").replaceChildren();
-  for (const p of config.projects) {
+  for (const p of availableProjects()) {
     const label = el("label"),
       input = el("input");
     input.type = "checkbox";
@@ -594,7 +688,9 @@ $("backupFile").onchange = async (e) => {
       " : " +
       (100 - pendingImport.splitRatio) +
       "。\n" +
-      "主题、项目分类和任务也会按备份替换。旧版备份没有任务时会清空任务面板，并恢复默认比例。\n导入不会写入任何子项目。";
+      "题签、打开方式与归档也会替换（归档 " +
+      pendingImport.archives.length +
+      " 份）。旧版备份缺少这些字段时会恢复默认设置；没有任务时会清空任务面板并恢复默认比例。\n导入不会写入任何子项目。";
     $("confirmImport").disabled = false;
   } catch (err) {
     $("backupPreview").textContent = "未导入：" + err.message;
@@ -605,13 +701,21 @@ $("confirmImport").onclick = () => {
   try {
     if (localStorage.getItem(storageKey) !== importBase)
       throw Error("记录已在另一页面变化，请重新选择备份预览");
+    checkpoint("恢复备份");
+    pendingImport.registry = config.projects.map(({ id, name, url }) => ({
+      id,
+      name,
+      url,
+    }));
     const raw = JSON.stringify(pendingImport);
     localStorage.setItem(storageKey, raw);
     state = pendingImport;
     lastRaw = raw;
+    undoStack.at(-1).after = raw;
     protectedStorage = false;
     rawRecord = null;
     pendingImport = null;
+    migrationPending = null;
     $("confirmImport").disabled = true;
     $("exportRaw").hidden = true;
     $("deskNote").value = state.note;
@@ -664,6 +768,7 @@ try {
     projectHeading.prepend(projectIcon(p.icon));
     content.append(projectHeading, el("p", p.description));
     const open = el("button", "进入 →");
+    open.className = "primary";
     open.dataset.open = p.id;
     row.append(content, open);
     $("projectList").append(row);
@@ -716,6 +821,28 @@ try {
       typeSize();
       openProjects(layout.selection);
     },
+    checkpoint,
+  });
+  mountSettings({
+    config: () => config, state: () => state,
+    preview(value) {
+      settingsPreview = value;
+      document.body.dataset.density = value?.density ?? state.preferences.appearance.density;
+      typeSize();
+    },
+    commit(next) {
+      const previous = state;
+      checkpoint("修改工作台设置");
+      state = next;
+      state.selection = state.selection.filter(id => !state.preferences.hidden.includes(id));
+      if (!persist()) {
+        state = previous; undoStack.pop();
+        throw Error("设置未保存，原记录保持不变。请先检查备份与恢复或刷新页面。");
+      }
+      settingsPreview = null;
+      if (view === "workspace" && !state.selection.length) { view = "home"; history.replaceState(null, "", "#home"); }
+      typeSize(); restoreHooks.forEach(run => run()); render();
+    },
   });
   visualDesk = mountVisualDesk({
     config: () => config,
@@ -723,7 +850,70 @@ try {
     persist,
     openProjects,
     frames,
+    checkpoint,
   });
+  personalDesk = mountPersonalDesk({
+    config: () => config,
+    state: () => state,
+    persist,
+    checkpoint,
+    undoChange,
+    undoStack: () => undoStack,
+    refresh: () => {
+      render();
+      restoreHooks.forEach((run) => run());
+    },
+    download,
+    pending: () => migrationPending,
+    setPending(value) {
+      validateState(value, [...new Set([...ids, ...recordIds(value)])]);
+      migrationPending = value;
+    },
+    migrationPreview(mapping) {
+      return migrateRecord(migrationPending, ids, mapping);
+    },
+    commitMigration(mapping) {
+      if (localStorage.getItem(storageKey) !== lastRaw)
+        throw Error("另一页面更新了记录，请刷新后重新核对");
+      const next = migrateRecord(migrationPending, ids, mapping);
+      if (!protectedStorage && lastRaw !== null && migrationPending !== null) {
+        const raw = JSON.stringify({ ...state, archives: [] });
+        if (next.archives.length >= 3 || raw.length > 100000)
+          throw Error("归档空间不足，请先导出当前记录");
+        next.archives.push({
+          label: "核对时的当前记录",
+          createdAt: new Date().toISOString(),
+          raw,
+        });
+      }
+      next.registry = config.projects.map(({ id, name, url }) => ({
+        id,
+        name,
+        url,
+      }));
+      const raw = JSON.stringify(next);
+      localStorage.setItem(storageKey, raw);
+      state = next;
+      lastRaw = raw;
+      protectedStorage = false;
+      rawRecord = null;
+      migrationPending = null;
+      undoStack = [];
+      $("exportRaw").hidden = true;
+      $("deskNote").value = state.note;
+      $("noteStatus").textContent = "配置核对完成；原记录已留在归档。";
+      view = state.selection.length ? "workspace" : "home";
+      typeSize();
+      history.replaceState(
+        null,
+        "",
+        view === "home" ? "#home" : "#project/" + state.selection.join("+"),
+      );
+      render();
+      restoreHooks.forEach((run) => run());
+    },
+  });
+  restoreHooks.push(() => personalDesk.refresh());
   restoreHooks.push(() => visualDesk.refresh());
   route();
 } catch (err) {

@@ -4,6 +4,8 @@ The default world is a personal paper desk interpreted as working UI. Do not tur
 
 Customization controls stay near the project list and use optional dialogs. The default desk remains readable; comfortable/compact density is a personal preference. Theme preview is temporary until confirmation, and cancellation restores the persisted appearance.
 
+Approved settings use a warm translucent modal with a 26px backdrop blur above the current desk or project. Header and save controls stay fixed while content scrolls. Close, Escape and outside-click preserve the draft and return focus; cancel restores saved values. Solid accent buttons carry primary actions, outlined buttons secondary actions, and text actions remain quiet. Project navigation uses a solid accent selected state and a short directional reveal, with a reduced-motion alternative.
+
 ## Tokens
 
 song-paper.css defines ground #f4efdf, surface #fbf7ed, text #25221d, muted #574f43, accent #a43226 and matching dark values. Layout references semantic tokens rather than hardcoded theme colors.

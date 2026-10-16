@@ -15,3 +15,6 @@
 ## 给Agent的一个具体请求
 
 “我喜欢宋韵黑红米纸色，但正文要清楚。先展示方案，再修改主题文件；保留搜索、并排、便笺和备份。说明改动并验证明暗、390px手机、键盘与刷新恢复。”
+# Settings surface
+
+Themes define `--settings-glass` (translucent dialog surface) and `--settings-scrim` (background dimming). Both light and dark values are required. Unsupported backdrop filtering and reduced-transparency preferences use the normal opaque `--surface`.

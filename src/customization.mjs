@@ -217,6 +217,7 @@ export function mountCustomization(api) {
     e.preventDefault();
     try {
       const form = $("metadataForm");
+      api.checkpoint("整理项目分类");
       prefs().metadata[metadataId] = projectMetadata({
         group: form.elements.group.value,
         tags: form.elements.tags.value
@@ -282,6 +283,7 @@ export function mountCustomization(api) {
             $("layoutStatus").textContent = "名称不能为空或与其他模板相同";
             return;
           }
+          api.checkpoint("重命名布局");
           l.name = name;
           const ok = api.persist();
           $("layoutStatus").textContent = ok ? "名称已保存" : "未保存到浏览器";
@@ -293,6 +295,7 @@ export function mountCustomization(api) {
       const remove = make("button", "删除");
       remove.onclick = () => {
         if (confirm("删除布局“" + l.name + "”？项目与便笺不受影响。")) {
+          api.checkpoint("删除布局");
           prefs().layouts = prefs().layouts.filter((x) => x.id !== l.id);
           const ok = api.persist();
           $("layoutStatus").textContent = ok
@@ -309,7 +312,7 @@ export function mountCustomization(api) {
   }
   $("layoutLibrary").onclick = () => {
     $("layoutChoices").replaceChildren();
-    for (const p of api.config().projects) {
+    for (const p of visibleProjects(api.config().projects, prefs())) {
       const label = make("label"),
         input = make("input");
       label.className = "checkline";
@@ -534,11 +537,12 @@ export function mountCustomization(api) {
     applyAppearance();
     $("appearanceButton").focus();
   });
-  new MutationObserver(() =>
+  new MutationObserver(() => {
+    if (document.body.classList.contains("settings-open")) return;
     applyAppearance(
       appearance.open && draft ? draft : prefs().appearance,
       appearance.open ? draftSize : api.state().readingSize,
-    ),
+    ); },
   ).observe(document.documentElement, {
     attributes: true,
     attributeFilter: ["data-theme"],

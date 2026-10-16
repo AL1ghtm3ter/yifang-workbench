@@ -35,6 +35,7 @@ export function paletteIssues(palette) {
 }
 export function initialPreferences() {
   return {
+    hidden: [],
     metadata: {},
     layouts: [],
     appearance: { themeName: null, density: "comfortable", colors: {} },
@@ -81,6 +82,9 @@ export function validatePreferences(v, ids) {
   if (
     !plain(v) ||
     !plain(v.metadata) ||
+    !Array.isArray(v.hidden ?? []) ||
+    (v.hidden ?? []).some(id => !ids.includes(id)) ||
+    new Set(v.hidden ?? []).size !== (v.hidden ?? []).length ||
     Object.keys(v.metadata).some((id) => !ids.includes(id)) ||
     !Array.isArray(v.layouts) ||
     v.layouts.length > 12 ||
@@ -121,6 +125,7 @@ export function validatePreferences(v, ids) {
       };
     });
   return {
+    hidden: [...(v.hidden ?? [])],
     metadata,
     layouts,
     appearance: validateAppearance(v.appearance),
@@ -135,6 +140,7 @@ export function visibleProjects(projects, prefs, query = "", group = "") {
         ? prefs.metadata[p.id]
         : projectMetadata(p);
       return (
+        !(prefs.hidden ?? []).includes(p.id) &&
         (!group || m.group === group) &&
         (!needle ||
           [p.name, p.description, m.group, ...m.tags]
@@ -158,6 +164,17 @@ export function visibleProjects(projects, prefs, query = "", group = "") {
           ).pinned,
         ),
     );
+}
+export function settingsSnapshot(state) {
+  return { hidden: [...(state.preferences.hidden ?? [])], theme: state.theme, readingSize: state.readingSize, density: state.preferences.appearance.density };
+}
+export function withSettings(state, value, ids) {
+  if (!plain(value) || !Array.isArray(value.hidden) || !["light", "dark", "system"].includes(value.theme) ||
+      ![16, 18, 20, 22].includes(value.readingSize) ||
+      !["comfortable", "compact"].includes(value.density)) throw Error("设置无效");
+  const preferences = validatePreferences({ ...state.preferences, hidden: value.hidden,
+    appearance: { ...state.preferences.appearance, density: value.density } }, ids);
+  return { ...state, theme: value.theme, readingSize: value.readingSize, preferences };
 }
 export function agentHandoff(config, state) {
   return {

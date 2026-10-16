@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-16 — Settings and desktop launcher repair
+
+- Added approved frosted-glass settings, reversible project visibility, and distinct action and navigation states.
+- Preserved notes, tasks, history, layouts, custom colors and old backup compatibility.
+- Desktop launcher now validates the live server root, PID, executable and script before reuse or stop, and repairs stale PID records after service updates.
+- Added reproducible Windows launcher build and installation checks. Local configuration and runtime artifacts stay outside the public source package.
+
 ## 0.2.0 — 开发候选
 
 - 可视化案头：项目地图与连接证据、任务接续三列面板、布局缩略图。

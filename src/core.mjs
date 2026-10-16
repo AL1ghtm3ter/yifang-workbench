@@ -4,6 +4,7 @@ import {
   projectMetadata,
 } from "./customization-core.mjs";
 export const STATE_KEY = "yifang-workbench-state-v1";
+export function openingMode(state, id) { return Object.hasOwn(state.openModes,id) ? state.openModes[id] : "embed"; }
 export function stateKeyFor(config) {
   return config.storageNamespace
     ? STATE_KEY + ":" + config.storageNamespace
@@ -69,6 +70,19 @@ export function validateConfig(value) {
     projectURL(p.url);
     if (p.originalUrl !== undefined) projectURL(p.originalUrl);
     if (
+      p.sourceType !== undefined &&
+      !["live", "snapshot", "unknown"].includes(p.sourceType)
+    )
+      throw Error("来源类型无效");
+    if (
+      p.snapshotDate !== undefined &&
+      (typeof p.snapshotDate !== "string" ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(p.snapshotDate) ||
+        !Number.isFinite(Date.parse(p.snapshotDate)) ||
+        new Date(p.snapshotDate).toISOString().slice(0, 10) !== p.snapshotDate)
+    )
+      throw Error("快照日期无效");
+    if (
       p.permissions !== undefined &&
       (!Array.isArray(p.permissions) ||
         new Set(p.permissions).size !== p.permissions.length ||
@@ -86,6 +100,8 @@ export function validateConfig(value) {
       ...projectMetadata(p),
       ...(p.originalUrl ? { originalUrl: p.originalUrl } : {}),
       ...(p.permissions ? { permissions: [...p.permissions] } : {}),
+      ...(p.sourceType ? { sourceType: p.sourceType } : {}),
+      ...(p.snapshotDate ? { snapshotDate: p.snapshotDate } : {}),
     };
   });
   return {
@@ -110,6 +126,10 @@ export function initialState() {
     readingSize: 18,
     splitRatio: 50,
     tasks: [],
+    desk: { name: "", inscription: "" },
+    openModes: {},
+    registry: [],
+    archives: [],
     preferences: initialPreferences(),
   };
 }
@@ -135,6 +155,57 @@ export function validateState(v, ids) {
   if (!Number.isInteger(ratio) || ratio < 25 || ratio > 75)
     throw Error("并排比例无效");
   const taskIds = new Set();
+  const desk = v.desk ?? { name: "", inscription: "" };
+  if (
+    !desk ||
+    typeof desk.name !== "string" ||
+    desk.name.length > 40 ||
+    typeof desk.inscription !== "string" ||
+    desk.inscription.length > 160
+  )
+    throw Error("题签无效");
+  const openModes = v.openModes ?? {};
+  if (
+    !openModes ||
+    typeof openModes !== "object" ||
+    Array.isArray(openModes) ||
+    Object.keys(openModes).some(
+      (id) =>
+        !ids.includes(id) || !["embed", "tab", "copy"].includes(openModes[id]),
+    )
+  )
+    throw Error("打开方式无效");
+  const registry = v.registry ?? [];
+  if (
+    !Array.isArray(registry) ||
+    registry.length > 24 ||
+    new Set(registry.map((p) => p?.id)).size !== registry.length ||
+    registry.some(
+      (p) =>
+        !p ||
+        !ids.includes(p.id) ||
+        typeof p.name !== "string" ||
+        p.name.length > 60,
+    )
+  )
+    throw Error("登记快照无效");
+  registry.forEach((p) => projectURL(p.url));
+  const archives = v.archives ?? [];
+  if (
+    !Array.isArray(archives) ||
+    archives.length > 3 ||
+    archives.some(
+      (a) =>
+        !a ||
+        typeof a.label !== "string" ||
+        a.label.length > 80 ||
+        typeof a.raw !== "string" ||
+        a.raw.length > 100000 ||
+        typeof a.createdAt !== "string" ||
+        !Number.isFinite(Date.parse(a.createdAt)),
+    )
+  )
+    throw Error("归档记录无效");
   const tasks = v.tasks ?? [];
   if (!Array.isArray(tasks) || tasks.length > 12) throw Error("任务记录无效");
   for (const t of tasks) {
@@ -154,6 +225,21 @@ export function validateState(v, ids) {
     )
       throw Error("任务记录无效");
     taskIds.add(t.id);
+    if (
+      t.links !== undefined &&
+      (!Array.isArray(t.links) ||
+        t.links.length > 1 ||
+        t.links.some(
+          (l) =>
+            !l ||
+            !t.projects.includes(l.projectId) ||
+            typeof l.label !== "string" ||
+            !l.label.trim() ||
+            l.label.length > 60,
+        ))
+    )
+      throw Error("停靠链接无效");
+    for (const l of t.links ?? []) projectURL(l.url);
   }
   return {
     version: 1,
@@ -170,9 +256,118 @@ export function validateState(v, ids) {
       next: t.next,
       projects: [...t.projects],
       status: t.status,
+      ...(t.links
+        ? {
+            links: t.links.map((l) => ({
+              projectId: l.projectId,
+              label: l.label,
+              url: l.url,
+            })),
+          }
+        : {}),
+    })),
+    desk: { name: desk.name, inscription: desk.inscription },
+    openModes: { ...openModes },
+    registry: registry.map((p) => ({ id: p.id, name: p.name, url: p.url })),
+    archives: archives.map((a) => ({
+      label: a.label,
+      createdAt: a.createdAt,
+      raw: a.raw,
     })),
     preferences: validatePreferences(v.preferences, ids),
   };
+}
+export function recordIds(v) {
+  const refs = [
+    ...(v.selection ?? []),
+    ...(v.recent ?? []),
+    ...(v.preferences?.hidden ?? []),
+    ...Object.keys(v.preferences?.metadata ?? {}),
+    ...Object.keys(v.openModes ?? {}),
+    ...(v.registry ?? []).map((p) => p.id),
+    ...(v.tasks ?? []).flatMap((t) => t.projects ?? []),
+    ...(v.preferences?.layouts ?? []).flatMap((l) => l.selection ?? []),
+  ];
+  if (
+    refs.length > 1000 ||
+    refs.some(
+      (id) => typeof id !== "string" || !/^[a-z][a-z0-9-]{0,40}$/.test(id),
+    )
+  )
+    throw Error("无法核对项目ID");
+  return [...new Set(refs)];
+}
+export function migrateRecord(v, currentIds, mapping) {
+  const all = [...new Set([...currentIds, ...recordIds(v)])],
+    old = validateState(v, all);
+  const missing = all.filter((id) => !currentIds.includes(id));
+  if (
+    missing.some(
+      (id) =>
+        !Object.hasOwn(mapping, id) ||
+        (mapping[id] !== null && !currentIds.includes(mapping[id])),
+    )
+  )
+    throw Error("请明确映射或归档每个旧项目");
+  const targets = missing.map((id) => mapping[id]).filter(Boolean);
+  if (
+    new Set(targets).size !== targets.length ||
+    targets.some((id) => recordIds(v).includes(id) && currentIds.includes(id))
+  )
+    throw Error("不能将多份个人记录隐式合并到同一项目");
+  const move = (id) => (currentIds.includes(id) ? id : mapping[id]);
+  const subset = (a) => [...new Set(a.map(move).filter(Boolean))];
+  const next = structuredClone(old);
+  next.selection = subset(old.selection);
+  next.recent = subset(old.recent);
+  next.preferences.hidden = subset(old.preferences.hidden);
+  next.registry = [];
+  next.openModes = {};
+  next.preferences.metadata = {};
+  for (const [id, value] of Object.entries(old.openModes))
+    if (move(id)) next.openModes[move(id)] = value;
+  for (const [id, value] of Object.entries(old.preferences.metadata))
+    if (move(id)) next.preferences.metadata[move(id)] = value;
+  next.tasks = old.tasks.flatMap((t) => {
+    const projects = subset(t.projects);
+    return projects.length
+      ? [
+          {
+            ...t,
+            projects,
+            links: (t.links ?? [])
+              .filter((l) => move(l.projectId))
+              .map((l) => ({ ...l, projectId: move(l.projectId) })),
+          },
+        ]
+      : [];
+  });
+  next.preferences.layouts = old.preferences.layouts.flatMap((l) => {
+    const selection = subset(l.selection);
+    return selection.length ? [{ ...l, selection }] : [];
+  });
+  // Preserve the entire pre-migration shell state as a bounded, downloadable archive.
+  const raw = JSON.stringify({ ...old, archives: [] });
+  if (raw.length > 100000 || old.archives.length >= 3)
+    throw Error("归档已满或原记录过大，请先下载归档再核对");
+  next.archives.push({
+    label: "配置核对前记录",
+    createdAt: new Date().toISOString(),
+    raw,
+  });
+  return validateState(next, currentIds);
+}
+export function safeTaskLink(link, projects, base) {
+  const p = projects.find((p) => p.id === link.projectId);
+  if (!p) throw Error("停靠项目未登记");
+  const url = projectURL(link.url, base),
+    origins = [
+      projectURL(p.url, base).origin,
+      projectURL(p.originalUrl ?? p.url, base).origin,
+    ];
+  if (!origins.includes(url.origin))
+    throw Error("停靠链接须属于关联项目的已登记来源");
+  return url.href;
 }
 export function expectedMessage(event, frame, url) {
   return (

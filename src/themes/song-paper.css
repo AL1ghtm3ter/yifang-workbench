@@ -14,6 +14,8 @@
   --ui-font: "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif;
   --title-font: "SimSun", "STSong", serif;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --settings-glass: rgb(251 247 237 / 68%);
+  --settings-scrim: rgb(37 34 29 / 16%);
   color-scheme: light;
 }
 :root[data-theme="dark"] {
@@ -28,5 +30,7 @@
   --accent-hover: #8f382b;
   --soft: #493328;
   --margin: #2b251c;
+  --settings-glass: rgb(48 43 37 / 80%);
+  --settings-scrim: rgb(0 0 0 / 30%);
   color-scheme: dark;
 }
