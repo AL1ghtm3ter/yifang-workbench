@@ -76,6 +76,10 @@ test("local server protects config, private paths, host and HTTP methods", async
   t.after(() => new Promise((r) => server.close(r)));
   const base = "http://127.0.0.1:" + server.address().port;
   assert.equal((await fetch(base + "/api/config")).status, 200);
+  const identity = await (await fetch(base + "/api/health")).json();
+  assert.equal(identity.name, "yifang-workbench");
+  assert.equal(identity.pid, process.pid);
+  assert.equal(identity.root, fs.realpathSync(new URL("..", import.meta.url)));
   assert.equal((await fetch(base + "/config.local.json")).status, 404);
   assert.equal((await fetch(base + "/../package.json")).status, 404);
   assert.equal((await fetch(base + "/", { method: "POST" })).status, 405);

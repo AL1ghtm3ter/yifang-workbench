@@ -64,7 +64,7 @@ export function createServer(config = readConfig()) {
       return res.end(
         req.method === "HEAD"
           ? ""
-          : JSON.stringify({ name: "yifang-workbench", version: "0.1.0" }),
+          : JSON.stringify({ name: "yifang-workbench", version: "0.2.0", root: ROOT, pid: process.pid }),
       );
     }
     const relative = pathname === "/" ? "index.html" : pathname.slice(1);
@@ -76,7 +76,7 @@ export function createServer(config = readConfig()) {
           .replace("frame-ancestors 'none'", "frame-ancestors 'self'"),
       );
     if (
-      !/^(?:index\.html|app\.mjs|core\.mjs|styles\/[a-z0-9-]+\.css|themes\/[a-z0-9-]+\.css|examples\/[a-z0-9-]+\.(?:html|js|css))$/.test(
+      !/^(?:index\.html|app\.mjs|core\.mjs|settings\.mjs|visual-desk\.mjs|personal-desk\.mjs|customization\.mjs|customization-core\.mjs|styles\/[a-z0-9-]+\.css|themes\/[a-z0-9-]+\.css|examples\/[a-z0-9-]+\.(?:html|js|css))$/.test(
         relative,
       )
     ) {

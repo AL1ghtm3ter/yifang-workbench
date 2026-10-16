@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>设置预览 · 一方书桌</title>
+  <link rel="stylesheet" href="/styles/layout.css">
+  <link rel="stylesheet" href="/themes/song-paper.css">
+</head>
+<body class="settings-demo" data-view="home">
+  <aside class="rail">
+    <a class="brand" href="/#home"><span class="seal" aria-hidden="true">记</span><span>一方书桌</span></a>
+    <nav id="demoNav" aria-label="演示项目导航"></nav>
+    <div class="rail-bottom"><button id="demoSettings" aria-haspopup="dialog" aria-expanded="false" aria-controls="demoSettingsDialog">设置</button><a href="/#home">返回工作台</a></div>
+  </aside>
+  <main class="main">
+    <header class="topbar"><span id="demoCrumb">我的桌面 / 设置</span><span>功能预览</span></header>
+    <label class="demo-mobile-project">切换页面<select id="demoMobileProject" aria-label="切换预览页面"></select></label>
+    <div class="heading"><div><h1 id="demoTitle">手边，只留需要的。</h1><p id="demoSubtitle">项目各自独立，在这里继续手边的事。</p></div><button id="demoHome" class="demo-secondary">打开设置</button></div>
+    <p class="demo-notice">功能预览 · 设置仅保存到本演示。左侧可直接切换项目，体验新的动效。</p>
+    <dialog id="demoSettingsDialog" class="settings-glass" aria-labelledby="demoSettingsTitle" aria-describedby="demoSettingsHint">
+      <header class="glass-heading"><div><h2 id="demoSettingsTitle">设置</h2><p id="demoSettingsHint">让书桌顺手一些 · 关闭后保留未保存的修改</p></div><button id="demoCloseSettings" class="demo-secondary" aria-label="关闭设置">关闭 <kbd>Esc</kbd></button></header>
+    <section id="demoSettingsView" class="settings-layout" aria-label="工作台设置预览">
+      <nav class="settings-sections" aria-label="设置分类">
+        <button data-section="projects" aria-current="page">项目显示</button>
+        <button data-section="appearance">外观与阅读</button>
+        <button data-section="data">数据与恢复</button>
+      </nav>
+      <div class="settings-content">
+        <section id="demo-projects" aria-labelledby="projectsHeading">
+          <h2 id="projectsHeading" tabindex="-1">项目显示</h2>
+          <p class="setting-description">隐藏后，项目从桌面和导航收起。内容与记录保留，随时可以在这里重新显示。</p>
+          <div class="settings-filter"><input id="demoFilter" type="search" placeholder="查找项目…" aria-label="查找项目"><button id="demoShowAll" class="demo-secondary">全部显示</button></div>
+          <p id="demoCount" class="setting-description"></p><div id="demoProjectRows"></div>
+        </section>
+        <section id="demo-appearance" hidden aria-labelledby="appearanceHeading">
+          <h2 id="appearanceHeading" tabindex="-1">外观与阅读</h2>
+          <p class="setting-description">修改即时预览；保存后保留，取消则回到上次保存的样子。</p>
+          <div class="setting-row"><div><label for="demoTheme">明暗模式</label><p>跟随系统，或固定使用一种明暗。</p></div><select id="demoTheme"><option value="system">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></div>
+          <div class="setting-row"><div><label for="demoSize">阅读字号</label><p>用于正文与阅读区域。</p></div><select id="demoSize"><option value="16">16 px</option><option value="18">18 px · 默认</option><option value="20">20 px</option><option value="22">22 px</option></select></div>
+          <div class="setting-row"><div><label for="demoDensity">列表间距</label><p>宽松便于阅读，紧凑容纳更多项目。</p></div><select id="demoDensity"><option value="comfortable">宽松</option><option value="compact">紧凑</option></select></div>
+          <div class="settings-reading"><h3>阅读预览</h3><p>资料各有归处，思路慢慢展开。把今天要做的事留在手边，也给下一步留一点空间。</p></div>
+        </section>
+        <section id="demo-data" hidden aria-labelledby="dataHeading">
+          <h2 id="dataHeading" tabindex="-1">数据与恢复</h2>
+          <div class="setting-row"><div><h3>演示记录</h3><p>只在当前浏览器保存隐藏清单、明暗、字号和间距。使用独立存储空间。</p></div><span>本机保存</span></div>
+          <div class="setting-row"><div><h3>正式工作台备份</h3><p>正式便笺、任务和布局，继续由原来的备份与恢复管理。</p></div><a href="/#home" target="_blank" rel="noopener">前往工作台</a></div>
+          <div class="setting-row"><div><h3>重新试用</h3><p>将本演示恢复为全部显示、浅色、18 px、宽松间距；保存后生效。</p></div><button id="demoReset" class="demo-secondary">恢复演示默认值</button></div>
+        </section>
+      </div>
+    </section>
+    <footer id="demoSaveBar" class="settings-save"><p id="demoStatus" role="status" aria-live="polite">尚未修改。</p><div><button id="demoCancel" class="demo-secondary" disabled>取消修改</button><button id="demoSave" class="primary" disabled>保存演示设置</button></div></footer>
+    </dialog>
+    <section id="demoHomeView" hidden aria-labelledby="demoHomeHeading"><div class="section-head"><h2 id="demoHomeHeading">手边的事</h2><button id="demoManage" class="demo-secondary">管理项目显示</button></div><div id="demoHomeList"></div></section>
+    <section id="demoWorkspaceView" hidden aria-label="项目预览工作区"><div class="demo-workspace-tools"><p id="demoFrameStatus" role="status"></p><a id="demoOriginal" class="demo-secondary" target="_blank" rel="noopener">在新窗口打开</a></div><div id="demoFrameStage"></div></section>
+    <div id="demoError" role="alert" hidden></div>
+  </main>
+  <script type="module" src="/examples/settings.js"></script>
+</body>
+</html>

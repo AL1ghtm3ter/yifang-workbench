@@ -10,6 +10,7 @@ const rootFiles = [
     "PRODUCT.md",
     "DESIGN.md",
     "CONTRIBUTING.md",
+    "CHANGELOG.md",
     "config.example.json",
   ],
   directories = ["src", "scripts", "tests", "docs", ".github"];

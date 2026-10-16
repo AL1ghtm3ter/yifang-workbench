@@ -52,6 +52,10 @@ npm start
 
 ## 功能
 
+新增[可视化案头](docs/VISUAL-DESK.md)：项目地图与连接说明、任务接续面板、布局缩略图，以及可拖动和键盘调整的双页阅读比例。
+
+v0.2开发候选新增接入向导、分类/置顶、命名布局、风格预览与Agent交接包，使用方式见[定制工作流](docs/CUSTOMIZATION.md)。向导生成配置文件，由你保存并重启；不会自动改动独立项目。
+
 - 配置驱动的项目入口、搜索和最近访问。
 - 单项目、左右/上下并排、加入项目与铺满工作区。
 - 保留已载入iframe实例；只在主动重载时重新初始化页面。
@@ -78,3 +82,8 @@ npm run package
 个人记录属于浏览器Origin。更换端口或浏览器前先导出，恢复时按当前注册项目核验。移除项目后，旧备份中该项目的ID会被拒绝；先用旧配置导出保留记录，再决定如何迁移。
 
 MIT License。Impeccable可作为可选设计工具自行安装；仓库不捆绑其技能或二进制。
+# Windows desktop launcher
+
+`scripts/windows/build-launcher.ps1` builds the launcher with the Windows .NET Framework compiler. Place the resulting EXE alongside `app/` (this repository's source and optional local config) and `runtime/node.exe`. No personal config or Node binary is included in the public source package.
+
+The launcher reuses a healthy service only after matching its installation root, PID, executable and script. It repairs stale PID records left by service updates. `--check` verifies or starts the service without opening a browser; `--stop` stops only a verified service belonging to that installation. Run `scripts/windows/test-launcher.ps1 -InstallRoot <installation-folder>` for installed regression checks.

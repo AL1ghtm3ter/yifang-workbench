@@ -19,6 +19,7 @@
         <time id="today"></time><button id="themeButton">切换深色</button
         ><button id="agentGuide">给 Agent 的说明</button
         ><button id="backupButton">备份与恢复</button>
+        <button id="settingsButton" disabled aria-haspopup="dialog" aria-expanded="false" aria-controls="demoSettingsDialog">设置</button>
       </div>
     </aside>
     <main class="main">
@@ -187,7 +188,7 @@
         <button data-close="backupDialog">关闭</button>
       </header>
       <p>
-        导出包含便笺、最近项目和布局偏好，不包含项目内容。导入先预览，再由你确认。
+        导出包含便笺、任务、最近项目和布局偏好，不包含项目内容。导入先预览，再由你确认。
       </p>
       <button id="exportBackup">导出记录</button
       ><input
